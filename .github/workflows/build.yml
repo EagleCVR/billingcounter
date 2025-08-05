@@ -1,73 +1,66 @@
-name: CI for BillingCounter
+name: build
 
 on:
   push:
     branches:
-      - '**'            # triggers on all branches
-  pull_request:
-    branches:
-      - main            # triggers on PRs targeting main
+      - '**'   # All branches
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  build:
+    name: Build Spring Boot + React and Push Docker Image
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_DB: billing_counter_db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/billing_counter_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+    # Trigger only for specific commit types
+    if: |
+      contains(github.event.head_commit.message, 'feat:') ||
+      contains(github.event.head_commit.message, 'fix:') ||
+      contains(github.event.head_commit.message, 'chore:') ||
+      contains(github.event.head_commit.message, 'release:')
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Java 11
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: '11'
-
-      - name: Set execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build Backend with Gradle
-        run: ./gradlew build --no-daemon
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install Frontend Dependencies
+      - name: Build React frontend
         working-directory: ui
-        run: npm install
+        run: |
+          npm install
+          npm run build
 
-      - name: Build Frontend
-        working-directory: ui
-        run: npm run build
+      - name: Copy frontend build to backend
+        run: |
+          rm -rf src/main/resources/static
+          mkdir -p src/main/resources
+          cp -r ui/build src/main/resources/static
 
-  deploy-on-main:
-    name: Deploy on Main (Optional)
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
-    steps:
-      - name: Print message
-        run: echo "Deployment steps would go here for main branch!"
+      - name: Build Spring Boot backend
+        run: ./gradlew clean build --no-daemon
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }}
