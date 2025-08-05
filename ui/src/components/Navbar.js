@@ -21,6 +21,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-brand">
         <Link to="/">BillingCounter</Link>
+        <Link to="/">Dummy CHange</Link>
       </div>
       <div className="navbar-links">
         <Link to="/dashboard">Dashboard</Link>
