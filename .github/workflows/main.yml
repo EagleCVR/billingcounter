@@ -1,0 +1,74 @@
+name: build
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: CI - Build Spring Boot + React & Push to GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if commit message triggers CI
+        id: check-commit
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "Commit Message: $COMMIT_MSG"
+          if [[ "$COMMIT_MSG" == feat:* || "$COMMIT_MSG" == fix:* || "$COMMIT_MSG" == chore:* || "$COMMIT_MSG" == release:* ]]; then
+            echo "trigger=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "🛑 Commit message does not match required pattern. Skipping workflow."
+            echo "trigger=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop execution if commit message does not match
+        if: steps.check-commit.outputs.trigger == 'false'
+        run: exit 0
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build React frontend
+        working-directory: ui
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy React build to Spring Boot static resources
+        run: |
+          rm -rf src/main/resources/static
+          mkdir -p src/main/resources/static
+          cp -r ui/build/* src/main/resources/static/
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build Spring Boot backend
+        run: ./gradlew clean build --no-daemon
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }} .
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }}
