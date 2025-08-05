@@ -3,32 +3,21 @@ name: build
 on:
   push:
     branches:
-      - '**'
+      - '**'   # All branches
 
 jobs:
   build:
     name: Build Spring Boot + React and Push Docker Image
     runs-on: ubuntu-latest
 
+    # Trigger only for specific commit types
+    if: |
+      contains(github.event.head_commit.message, 'feat:') ||
+      contains(github.event.head_commit.message, 'fix:') ||
+      contains(github.event.head_commit.message, 'chore:') ||
+      contains(github.event.head_commit.message, 'release:')
+
     steps:
-      - name: Check commit message for CI keywords
-        if: |
-          contains(github.event.head_commit.message, 'feat:') ||
-          contains(github.event.head_commit.message, 'fix:') ||
-          contains(github.event.head_commit.message, 'chore:') ||
-          contains(github.event.head_commit.message, 'release:')
-        run: echo "✅ CI triggered by conventional commit: ${{ github.event.head_commit.message }}"
-
-      - name: Exit if commit message doesn't match
-        if: |
-          !contains(github.event.head_commit.message, 'feat:') &&
-          !contains(github.event.head_commit.message, 'fix:') &&
-          !contains(github.event.head_commit.message, 'chore:') &&
-          !contains(github.event.head_commit.message, 'release:')
-        run: |
-          echo "🛑 Commit message doesn't match required patterns."
-          exit 1
-
       - name: Checkout code
         uses: actions/checkout@v3
 
