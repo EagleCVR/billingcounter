@@ -67,9 +67,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-         docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
-
+          docker build -t ghcr.io/eaglecvr/billing-counter:${{ github.sha }} .
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker push ghcr.io/eaglecvr/billing-counter:${{ github.sha }}
