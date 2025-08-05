@@ -1,0 +1,36 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# testing
+/ui/coverage
+
+# production
+/ui/build
+
+# misc
+/ui/.DS_Store
+/ui/.env.local
+/ui/.env.development.local
+/ui/.env.test.local
+/ui/.env.production.local
+
+/ui/npm-debug.log*
+/ui/yarn-debug.log*
+/ui/yarn-error.log*
+
+# Java backend
+/target/
+*.log
+*.class
+*.bin
+# React frontend
+/ui/node_modules/
+/ui/build/
+/ui/.env
+
+# IDE and system files
+*.iml
+*.DS_Store
+.vscode/
+.idea/
+
+.gradle/
