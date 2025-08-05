@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.billingcounter.service.HotelTableServiceTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-06-18T15:18:05.717Z" hostname="SAS-8RYHT74" time="0.631">
+  <properties/>
+  <testcase name="testMarkTableAsOccupied()" classname="com.billingcounter.service.HotelTableServiceTest" time="0.631"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
