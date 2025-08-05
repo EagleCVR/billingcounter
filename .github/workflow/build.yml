@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches:
+      - '**'   # Triggers on all branches
+
+jobs:
+  build:
+    name: Build Spring Boot + React and Push Docker Image
+    runs-on: ubuntu-latest
+
+    # Only run for conventional commit prefixes
+    if: |
+      contains(github.event.head_commit.message, 'feat:') ||
+      contains(github.event.head_commit.message, 'fix:') ||
+      contains(github.event.head_commit.message, 'chore:') ||
+      contains(github.event.head_commit.message, 'release:')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build React frontend
+        working-directory: ui
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy frontend build to backend
+        run: |
+          rm -rf src/main/resources/static
+          mkdir -p src/main/resources
+          cp -r ui/build src/main/resources/static
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Spring Boot backend
+        run: ./gradlew clean build --no-daemon
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }}
