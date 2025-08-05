@@ -1,0 +1,73 @@
+name: CI for BillingCounter
+
+on:
+  push:
+    branches:
+      - '**'            # triggers on all branches
+  pull_request:
+    branches:
+      - main            # triggers on PRs targeting main
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: billing_counter_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/billing_counter_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Backend with Gradle
+        run: ./gradlew build --no-daemon
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Frontend Dependencies
+        working-directory: ui
+        run: npm install
+
+      - name: Build Frontend
+        working-directory: ui
+        run: npm run build
+
+  deploy-on-main:
+    name: Deploy on Main (Optional)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Print message
+        run: echo "Deployment steps would go here for main branch!"
