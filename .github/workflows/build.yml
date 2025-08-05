@@ -1,3 +1,5 @@
+name: Build and Push to GHCR
+
 name: build
 on:
   push:
