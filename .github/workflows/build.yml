@@ -64,10 +64,10 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # Use the automatically provided GITHUB_TOKEN so repository admins
-          # do not need to add a separate PAT/secret. Note: repository
-          # Actions permissions must allow workflows to write packages.
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Use a repository secret `GHCR_TOKEN` (personal access token)
+          # with package write permissions. This works when repo/org
+          # workflow permissions are not available or restricted.
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build Docker image
         run: |

@@ -296,6 +296,23 @@ npm test
 
 If you see specific errors, paste the stack trace and I can help debug.
 
+### CI / GHCR publishing when repo Actions permissions are restricted
+
+If GitHub Actions cannot publish Docker images to GitHub Container Registry (GHCR) due to repository or organization-level restrictions, use a Personal Access Token (PAT) and add it as a repository secret named `GHCR_TOKEN`.
+
+1) Create a PAT (classic) at https://github.com/settings/tokens/new with these scopes:
+  - `write:packages`
+  - `read:packages`
+  - `repo` (only if this repository is private)
+
+2) Add the token as a repository secret:
+  - Repository → Settings → Secrets and variables → Actions → New repository secret
+  - Name: `GHCR_TOKEN`
+  - Value: the PAT you created
+
+3) The CI workflow will use `GHCR_TOKEN` for login and publishing. After adding the secret, re-run the failing workflow from the Actions page.
+
+
 ---
 
 ## Contribution & Development notes
