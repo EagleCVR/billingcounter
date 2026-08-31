@@ -71,8 +71,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }} .
+          # Docker requires lowercase repository names. Lowercase the
+          # repository owner to avoid "repository name must be lowercase".
+          docker build -t ghcr.io/${{ toLower(github.repository_owner) }}/billing-counter:${{ github.sha }} .
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/billing-counter:${{ github.sha }}
+          docker push ghcr.io/${{ toLower(github.repository_owner) }}/billing-counter:${{ github.sha }}
